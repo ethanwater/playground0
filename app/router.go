@@ -12,9 +12,11 @@ import (
 
 func EchoResponseHandler(ctx context.Context, server *Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		echoResponse := vars["echo"]
-		server.Logger.LogSuccess(echoResponse)
+		go func() {
+			vars := mux.Vars(r)
+			echoResponse := vars["echo"]
+			server.Logger.LogSuccess(echoResponse)
+		}()
 	})
 }
 

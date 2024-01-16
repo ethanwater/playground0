@@ -12,7 +12,6 @@ import (
 
 	_ "embed"
 
-	"github.com/TwiN/go-color"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"vivian.app/utils"
@@ -53,14 +52,7 @@ func Deploy(ctx context.Context) error {
 		WriteTimeout: s.VivianWriteTimeout,
 	}
 
-	logDeployment := func(s *Server) {
-		fmt.Printf("╭───────────────────────────────────────────────────╮\n")
-		fmt.Printf("│ app        : %-45s │\n", color.Ize(color.Purple, VivianAppName))
-		fmt.Printf("│ deployment : %-36s │\n", color.Ize(color.Blue, s.DeploymentID))
-		fmt.Printf("╰───────────────────────────────────────────────────╯\n")
-	}
-
-	logDeployment(s)
+	s.Logger.LogDeployment()
 
 	go func() {
 		<-ctx.Done()

@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -16,18 +17,6 @@ const (
 	charset     string = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	authKeySize int    = 5
 )
-
-//var (
-//	generatedAuthKeys = metrics.NewCounter(
-//		"generatedAuthKeys",
-//		"total number of generated authentication keys",
-//	)
-//
-//	validAuthKeys = metrics.NewCounter(
-//		"validAuthKeys",
-//		"totoal number of successfully matching keys",
-//	)
-//)
 
 type T interface {
 	GenerateAuthKey2FA(context.Context, string) (string, error)
@@ -47,7 +36,7 @@ func GenerateAuthKey2FA(ctx context.Context, s *utils.VivianLogger) (string, err
 	go func() {
 		authKeyHash, err := HashKeyphrase(ctx, authKey.String())
 		if err != nil {
-			s.LogError("failure hashing the authentication key")
+			s.LogError("failure hashing the authentication key", err)
 			hashChannel <- ""
 			return
 		}
@@ -56,7 +45,7 @@ func GenerateAuthKey2FA(ctx context.Context, s *utils.VivianLogger) (string, err
 	hash := <-hashChannel
 
 	if hash == "" {
-		s.LogError("failure hashing the authentication key")
+		s.LogError("failure hashing the authentication key", errors.New("empty hash"))
 		return "", nil
 	}
 

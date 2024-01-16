@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -47,7 +48,7 @@ func GenerateAuthKey2FA(ctx context.Context, s *utils.VivianLogger) (string, err
 	go func() {
 		authKeyHash, err := HashKeyphrase(ctx, authKey.String())
 		if err != nil {
-			s.LogError("failure hashing the authentication key")
+			s.LogError("failure hashing the authentication key", err)
 			hashChannel <- ""
 			return
 		}
@@ -56,7 +57,7 @@ func GenerateAuthKey2FA(ctx context.Context, s *utils.VivianLogger) (string, err
 	hash := <-hashChannel
 
 	if hash == "" {
-		s.LogError("failure hashing the authentication key")
+		s.LogError("failure hashing the authentication key", errors.New("empty hash"))
 		return "", nil
 	}
 

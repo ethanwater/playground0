@@ -52,8 +52,8 @@ func (s *VivianLogger) LogWarning(msg string) {
 	s.logMessage(color.Ize(color.Yellow, VivianLoggerWarning), msg)
 }
 
-func (s *VivianLogger) LogError(msg string) {
-	s.logMessage(color.Ize(color.Red, VivianLoggerError), msg)
+func (s *VivianLogger) LogError(msg string, err error) {
+	s.logMessage(color.Ize(color.Red, VivianLoggerError), fmt.Sprintf("%s error: %s", msg, err))
 }
 
 func (s *VivianLogger) LogSuccess(msg string) {

@@ -18,18 +18,6 @@ const (
 	authKeySize int    = 5
 )
 
-//var (
-//	generatedAuthKeys = metrics.NewCounter(
-//		"generatedAuthKeys",
-//		"total number of generated authentication keys",
-//	)
-//
-//	validAuthKeys = metrics.NewCounter(
-//		"validAuthKeys",
-//		"totoal number of successfully matching keys",
-//	)
-//)
-
 type T interface {
 	GenerateAuthKey2FA(context.Context, string) (string, error)
 	VerifyAuthKey2FA(context.Context, string, string) (bool, error)

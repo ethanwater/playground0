@@ -30,10 +30,7 @@ func (s *VivianLogger) logMessage(logLevel, msg string) {
 		return
 	}
 
-	// Use path.Base to get just the filename without the path
 	filename := path.Base(file)
-
-	// Format the log message with timestamp, filename, line number, deployment ID, log level, and actual message
 	logMessage := fmt.Sprintf(
 		"%v %-40s %s %s %s",
 		time.Now().UTC().Format("2006-01-02 15:04:05"),
@@ -43,7 +40,6 @@ func (s *VivianLogger) logMessage(logLevel, msg string) {
 		msg,
 	)
 
-	// Log the formatted message
 	s.Logger.Print(logMessage)
 }
 

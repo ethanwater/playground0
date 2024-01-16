@@ -15,86 +15,62 @@ import (
 	"github.com/TwiN/go-color"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"vivian.app/utils"
 )
 
 const (
-	VivianAppName       string        = "vivian.app"
-	VivianHostAddr      string        = ":8080"
-	VivianReadTimeout   time.Duration = time.Second * 10
-	VivianWriteTimeout  time.Duration = time.Second * 10
-	VivianLoggerSuccess string        = "[vivian:success]"
-	VivianLoggerWarning string        = "[vivian:warn]"
-	VivianLoggerError   string        = "[vivian:error]"
-	VivianLoggerFatal   string        = "[vivian:fatal]"
+	VivianAppName      string        = "vivian.app"
+	VivianHostAddr     string        = ":8080"
+	VivianReadTimeout  time.Duration = time.Second * 10
+	VivianWriteTimeout time.Duration = time.Second * 10
 )
 
-type Server interface {
+type ServerInitialization interface {
 	Deploy(context.Context) error
 }
 
-type T struct {
+type Server struct {
 	DeploymentID       string
 	Listener           net.Listener
 	Handler            http.Handler
-	Logger             *log.Logger
+	Logger             *utils.VivianLogger
 	Addr               string
 	VivianReadTimeout  time.Duration
 	VivianWriteTimeout time.Duration
 	mux                sync.Mutex
 }
 
-func (t *T) LogFatal(msg string) {
-	t.Logger.SetPrefix(fmt.Sprintf("%s %s", color.Ize(color.Purple, t.DeploymentID[:8]), color.Ize(color.RedBackground, VivianLoggerFatal)))
-	t.Logger.Printf(" %s", msg)
-	os.Exit(1)
-}
-
-func (t *T) LogWarning(msg string) {
-	t.Logger.SetPrefix(fmt.Sprintf("%s %s", color.Ize(color.Purple, t.DeploymentID[:8]), color.Ize(color.Yellow, VivianLoggerWarning)))
-	t.Logger.Printf(" %s", msg)
-}
-
-func (t *T) LogError(msg string) {
-	t.Logger.SetPrefix(fmt.Sprintf("%s %s", color.Ize(color.Purple, t.DeploymentID[:8]), color.Ize(color.Red, VivianLoggerError)))
-	t.Logger.Printf(" %s", msg)
-}
-
-func (t *T) LogSuccess(msg string) {
-	t.Logger.SetPrefix(fmt.Sprintf("%s %s", color.Ize(color.Purple, t.DeploymentID[:8]), color.Ize(color.Green, VivianLoggerSuccess)))
-	t.Logger.Printf(" %s", msg)
-}
-
 func Deploy(ctx context.Context) error {
-	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile|log.LUTC|log.Lmsgprefix)
-	t := buildServer(ctx, logger)
-	t.mux.Lock()
-	defer t.mux.Unlock()
+	logger := log.New(os.Stdout, "", log.Lmsgprefix)
+	s := buildServer(ctx, logger)
+	s.mux.Lock()
+	defer s.mux.Unlock()
 
 	server := &http.Server{
-		Addr:         t.Addr,
-		Handler:      t.Handler,
-		ReadTimeout:  t.VivianReadTimeout,
-		WriteTimeout: t.VivianWriteTimeout,
+		Addr:         s.Addr,
+		Handler:      s.Handler,
+		ReadTimeout:  s.VivianReadTimeout,
+		WriteTimeout: s.VivianWriteTimeout,
 	}
 
-	displayDeployment := func(t *T) {
+	logDeployment := func(s *Server) {
 		fmt.Printf("╭───────────────────────────────────────────────────╮\n")
 		fmt.Printf("│ app        : %-45s │\n", color.Ize(color.Purple, VivianAppName))
-		fmt.Printf("│ deployment : %-36s │\n", color.Ize(color.Blue, t.DeploymentID))
+		fmt.Printf("│ deployment : %-36s │\n", color.Ize(color.Blue, s.DeploymentID))
 		fmt.Printf("╰───────────────────────────────────────────────────╯\n")
 	}
 
-	displayDeployment(t)
+	logDeployment(s)
 
 	go func() {
 		<-ctx.Done()
 		server.Shutdown(context.Background())
 	}()
 
-	return http.ListenAndServe(t.Addr, t.Handler)
+	return http.ListenAndServe(s.Addr, s.Handler)
 }
 
-func buildServer(ctx context.Context, logger *log.Logger) *T {
+func buildServer(ctx context.Context, logger *log.Logger) *Server {
 	generateDeploymentID := func() string {
 		randomUUID := uuid.New()
 		shortUUID := fmt.Sprintf("%08x-%04x-%04x-%04x-%012x",
@@ -107,9 +83,9 @@ func buildServer(ctx context.Context, logger *log.Logger) *T {
 	deploymentID := generateDeploymentID()
 	router := mux.NewRouter()
 
-	server := &T{
+	server := &Server{
 		DeploymentID:       deploymentID,
-		Logger:             logger,
+		Logger:             &utils.VivianLogger{Logger: logger, DeploymentID: deploymentID},
 		Handler:            router,
 		Addr:               VivianHostAddr,
 		VivianReadTimeout:  VivianReadTimeout,
@@ -117,6 +93,7 @@ func buildServer(ctx context.Context, logger *log.Logger) *T {
 	}
 
 	router.Handle("/echo={echo}", EchoResponseHandler(ctx, server))
+	router.Handle("/2fa", Authentication2FAHandler(ctx, server))
 
 	return server
 }

@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"vivian.app/pkg/auth"
+	"vivian.app/internal/pkg/auth"
 )
 
 func EchoResponseHandler(ctx context.Context, server *Server) http.Handler {

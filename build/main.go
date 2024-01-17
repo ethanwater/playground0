@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 
-	"vivian.app/app"
+	"vivian.app/internal/app"
 )
 
 func main() {

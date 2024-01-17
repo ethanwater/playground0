@@ -14,7 +14,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"vivian.app/utils"
+	"vivian.app/internal/utils"
 )
 
 const (

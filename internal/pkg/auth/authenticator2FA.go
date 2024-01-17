@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
-	"vivian.app/utils"
+	"vivian.app/internal/utils"
 )
 
 const (

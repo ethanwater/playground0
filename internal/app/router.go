@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
 
 	"github.com/gorilla/mux"
 	"vivian.app/internal/pkg/auth"
@@ -12,11 +13,22 @@ import (
 
 func EchoResponseHandler(ctx context.Context, server *Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		echoResponse := vars["echo"]
+
+		var wg sync.WaitGroup
+		wg.Add(1)
 		go func() {
-			vars := mux.Vars(r)
-			echoResponse := vars["echo"]
+			defer wg.Done()
 			server.Logger.LogSuccess(echoResponse)
 		}()
+		wg.Wait()
+
+		w.WriteHeader(http.StatusOK)
+		_, err := w.Write([]byte(echoResponse))
+		if err != nil {
+			server.Logger.LogError("Error writing response: ", err)
+		}
 	})
 }
 

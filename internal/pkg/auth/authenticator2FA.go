@@ -54,13 +54,13 @@ func GenerateAuthKey2FA(ctx context.Context, s *utils.VivianLogger) (string, err
 	return hash, nil
 }
 
-func VerifyAuthKey2FA(ctx context.Context, authkey_hash, input string, s *utils.VivianLogger) (bool, error) {
+func VerifyAuthKey2FA(ctx context.Context, authkey_hash, key string, s *utils.VivianLogger) (bool, error) {
 	var mu sync.Mutex
 	mu.Lock()
 	defer mu.Unlock()
 
-	if SanitizeCheck(input) {
-		status := bcrypt.CompareHashAndPassword([]byte(authkey_hash), []byte(input))
+	if SanitizeCheck(key) {
+		status := bcrypt.CompareHashAndPassword([]byte(authkey_hash), []byte(key))
 		if status != nil {
 			s.LogWarning("invalid key")
 			//t.Logger(ctx).Debug("vivian: [warning]", "key invalid", http.StatusNotAcceptable)

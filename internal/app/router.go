@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/gorilla/mux"
@@ -32,36 +33,83 @@ func EchoResponseHandler(ctx context.Context, server *Server) http.Handler {
 	})
 }
 
-func Authentication2FAHandler(ctx context.Context, server *Server) http.Handler {
+func Authentication2FA(ctx context.Context, server *Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		resultChan := make(chan string)
-		errChan := make(chan error)
+		q := r.URL.Query()
+		action := strings.TrimSpace(q.Get("action"))
+		switch action {
+		case "generate":
+			GenerateAuthentication2FA(w, ctx, server)
+		case "verify":
+			hash := strings.TrimSpace(q.Get("hash"))
+			key := strings.TrimSpace(q.Get("key"))
+			VerifyAuthentication2FA(w, ctx, server, hash, key)
+		default:
+			http.NotFound(w, r)
+		}
+	})
+}
 
-		go func() {
-			key2FA, err := auth.GenerateAuthKey2FA(ctx, server.Logger)
-			if err != nil {
-				errChan <- err
-				return
-			}
-			resultChan <- key2FA
-		}()
+func GenerateAuthentication2FA(w http.ResponseWriter, ctx context.Context, server *Server) {
+	hashChan := make(chan string)
+	errorChan := make(chan error)
 
-		select {
-		case key2FA := <-resultChan:
-			bytes, err := json.Marshal(key2FA)
-			if err != nil {
-				server.Logger.LogError("failure marshalling results", err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			if _, err := fmt.Fprintln(w, string(bytes)); err != nil {
-				server.Logger.LogError("failure writing results", err)
-				return
-			}
-		case err := <-errChan:
-			server.Logger.LogError("unable to generate authentication 2FA: %v", err)
+	go func() {
+		hash2FA, err := auth.GenerateAuthKey2FA(ctx, server.Logger)
+		if err != nil {
+			errorChan <- err
+			return
+		}
+		hashChan <- hash2FA
+	}()
+
+	select {
+	case hash2FA := <-hashChan:
+		bytes, err := json.Marshal(hash2FA)
+		if err != nil {
+			server.Logger.LogError("failure marshalling results", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-	})
+		if _, err := fmt.Fprintln(w, string(bytes)); err != nil {
+			server.Logger.LogError("failure writing results", err)
+			return
+		}
+	case err := <-errorChan:
+		server.Logger.LogError("unable to generate authentication 2FA: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func VerifyAuthentication2FA(w http.ResponseWriter, ctx context.Context, server *Server, hash2FA, key2FA string) {
+	resultChan := make(chan bool)
+	errorChan := make(chan error)
+
+	go func() {
+		result, err := auth.VerifyAuthKey2FA(ctx, hash2FA, key2FA, server.Logger)
+		if err != nil {
+			errorChan <- err
+			return
+		}
+		resultChan <- result
+	}()
+
+	select {
+	case result := <-resultChan:
+		bytes, err := json.Marshal(result)
+		if err != nil {
+			server.Logger.LogError("failure marshalling results", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if _, err := fmt.Fprintln(w, string(bytes)); err != nil {
+			server.Logger.LogError("failure writing results", err)
+			return
+		}
+	case err := <-errorChan:
+		server.Logger.LogError("unable to verify authentication 2FA: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }

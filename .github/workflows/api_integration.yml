@@ -31,6 +31,3 @@ jobs:
           echo "Test failed: EchoResponseHandler did not return the expected input."
           exit 1
         fi
-
-    - name: Stop the server
-      run: pkill -f "build/main.go" || true   

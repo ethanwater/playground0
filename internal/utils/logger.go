@@ -33,7 +33,7 @@ func (s *VivianLogger) logMessage(logLevel, msg string) {
 
 	filename := path.Base(file)
 	logMessage := fmt.Sprintf(
-		"%v %-35s %s %s %s",
+		"%v %-35s %s %-25s %s",
 		time.Now().UTC().Format("2006-01-02 15:04:05"),
 		color.Ize(color.Blue, fmt.Sprintf("%s:%v:", filename, line)),
 		color.Ize(color.Purple, s.DeploymentID[:8]),

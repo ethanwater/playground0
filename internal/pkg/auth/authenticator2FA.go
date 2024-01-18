@@ -64,11 +64,11 @@ func VerifyAuthKey2FA(ctx context.Context, authkey_hash, key string, s *utils.Vi
 		if status != nil {
 			s.LogWarning("invalid key")
 			//t.Logger(ctx).Debug("vivian: [warning]", "key invalid", http.StatusNotAcceptable)
-			return status == nil, status
+			return false, status
 		} else {
 			s.LogSuccess("verified key")
 			//t.Logger(ctx).Debug("vivian: [ok]", "key verified", status == nil, "status", http.StatusOK)
-			return status == nil, status
+			return true, status
 		}
 	}
 

@@ -108,7 +108,7 @@ func VerifyAuthentication2FA(w http.ResponseWriter, ctx context.Context, server 
 			return
 		}
 	case err := <-errorChan:
-		server.Logger.LogError("unable to verify authentication 2FA: %v", err)
+		//server.Logger.LogWarning("invalid key")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

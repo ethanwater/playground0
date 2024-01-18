@@ -1,12 +1,13 @@
 name: API Endpoint Testing Workflow
 
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: ["Build Server"]
+    types:
+      - completed
 
 jobs:
-  test:
+  integration-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -16,14 +17,9 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.21.1
+        go-version: 1.21
 
-    - name: Build and Test
-      run: |
-        go build ./...
-        go test -v ./...
-
-    - name: Run EchoResponseHandler Workflow
+    - name: Test EchoResponseHandler
       run: |
         go run build/main.go &  
         sleep 5  
@@ -36,6 +32,6 @@ jobs:
           echo "Test failed: EchoResponseHandler did not return the expected input."
           exit 1
         fi
-    - name: Stop the server
-      run: pkill -f "build/main.go" || true  
 
+    - name: Stop the server
+      run: pkill -f "build/main.go" || true   

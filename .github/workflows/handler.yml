@@ -1,0 +1,41 @@
+name: Handler Test
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.21.1
+
+    - name: Build and Test
+      run: |
+        go build ./...
+        go test -v ./...
+
+    - name: Run EchoResponseHandler Workflow
+      run: |
+        go run ../../build/main.go &  
+        sleep 5  
+
+        response=$(curl -s "http://127.0.0.1:8080/echo=cat")
+
+        if [[ "$response" == *"cat"* ]]; then
+          echo "Test passed: EchoResponseHandler returned the expected input."
+        else
+          echo "Test failed: EchoResponseHandler did not return the expected input."
+          exit 1
+        fi
+    - name: Stop the server
+      run: pkill -f "../../build/main.go" || true  
+

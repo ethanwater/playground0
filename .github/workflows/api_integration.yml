@@ -1,4 +1,4 @@
-name: Handler Test
+name: API Endpoint Testing Workflow
 
 on:
   push:

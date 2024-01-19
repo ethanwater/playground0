@@ -14,6 +14,14 @@ import (
 
 func EchoResponseHandler(ctx context.Context, server *Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		//TODO validate if user exists and is valid
+		//vars := mux.Vars(r)
+		//user := vars["user"]
+		//if user does not exist{
+		//	logWarning*
+		//	return
+		//}
+
 		vars := mux.Vars(r)
 		echoResponse := vars["echo"]
 
@@ -35,6 +43,14 @@ func EchoResponseHandler(ctx context.Context, server *Server) http.Handler {
 
 func Authentication2FA(ctx context.Context, server *Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		//TODO validate if user exists and is valid
+		//vars := mux.Vars(r)
+		//user := vars["user"]
+		//if user does not exist{
+		//	logWarning*
+		//	return
+		//}
+
 		q := r.URL.Query()
 		action := strings.TrimSpace(q.Get("action"))
 		switch action {

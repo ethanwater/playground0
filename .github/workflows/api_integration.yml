@@ -35,5 +35,18 @@ jobs:
           echo "Test failed: EchoResponseHandler did not return the expected input."
           exit 1
         fi
+    
+    - name: Run Generate2FA Workflow
+      run: |
+        go run build/main.go &  
+        sleep 5  
+        response=$(curl -s "http://127.0.0.1:8080/user/bella/2FA?action=generate")
+        if [[ "$response" != *"cat"* ]]; then
+          echo "Test passed: Generate2FA returned the expected input."
+        else
+          echo "Test failed: Generate2FA did not return the expected input."
+          exit 1
+        fi
+
     - name: Stop the server
       run: pkill -f "build/main.go" || true  

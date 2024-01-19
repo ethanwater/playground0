@@ -82,6 +82,7 @@ func GenerateAuthentication2FA(w http.ResponseWriter, ctx context.Context, serve
 	}
 }
 
+//TODO allow a more streamlined hash input
 func VerifyAuthentication2FA(w http.ResponseWriter, ctx context.Context, server *Server, hash2FA, key2FA string) {
 	resultChan := make(chan bool)
 	errorChan := make(chan error)

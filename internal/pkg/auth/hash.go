@@ -6,7 +6,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-const cost int = 13
+const cost int = 12
 
 func HashKeyphrase(_ context.Context, password string) (string, error) {
 	hashChannel := make(chan struct {

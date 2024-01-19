@@ -85,7 +85,7 @@ func buildServer(ctx context.Context, logger *log.Logger) *Server {
 	}
 
 	router.Handle("/echo={echo}", EchoResponseHandler(ctx, server))
-	router.Handle("/user/{username}/2fa", Authentication2FAHandler(ctx, server))
+	router.Handle("/user/{username}/2FA", Authentication2FA(ctx, server)).Methods("GET")
 
 	return server
 }

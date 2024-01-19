@@ -58,6 +58,7 @@ jobs:
         else
           echo "Test failed: Generate2FA did not return the expected input."
           exit 1
+        fi
      
     - name: Stop the server
       run: pkill -f "build/main.go" || true  

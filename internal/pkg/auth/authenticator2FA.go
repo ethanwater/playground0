@@ -24,9 +24,14 @@ type T interface {
 	VerifyAuthKey2FA(context.Context, string, string) (bool, error)
 }
 
-var hashChannel atomic.Pointer[string]
+type HashManager struct {
+	atomicValue atomic.Value
+	flag        uint16
+}
 
-func GenerateAuthKey2FA(ctx context.Context, s *utils.VivianLogger) (string, error) {
+var HashManagerAtomic HashManager
+
+func GenerateAuthKey2FA(ctx context.Context, s *utils.VivianLogger) ([]byte, error) {
 	source := rand.New(rand.NewSource(time.Now().Unix()))
 	var authKey strings.Builder
 
@@ -34,6 +39,8 @@ func GenerateAuthKey2FA(ctx context.Context, s *utils.VivianLogger) (string, err
 		sample := source.Intn(len(charset))
 		authKey.WriteString(string(charset[sample]))
 	}
+
+	HashManagerAtomic.flag = 0
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -44,15 +51,15 @@ func GenerateAuthKey2FA(ctx context.Context, s *utils.VivianLogger) (string, err
 			s.LogError("failure hashing the authentication key", err)
 			return
 		}
-		hashChannel.Store(&authKeyHash)
+		HashManagerAtomic.atomicValue.Store([]byte(authKeyHash))
 	}()
 	wg.Wait()
 
-	hash := *hashChannel.Load()
+	hash := HashManagerAtomic.atomicValue.Load().([]byte)
 
-	if hash == "" {
+	if hash == nil {
 		s.LogError("failure hashing the authentication key", errors.New("empty hash"))
-		return "", nil
+		return []byte{}, nil
 	}
 
 	s.LogSuccess(fmt.Sprintf("authentication key generated: %v", authKey.String()))
@@ -65,16 +72,24 @@ func VerifyAuthKey2FA(ctx context.Context, key string, s *utils.VivianLogger) (b
 	mu.Lock()
 	defer mu.Unlock()
 
-	authkey_hash := *hashChannel.Load()
+	if HashManagerAtomic.flag == 1 {
+		return false, nil
+	}
+
+	authkey_hash := HashManagerAtomic.atomicValue.Load()
+	if authkey_hash == nil {
+		// Handle the case where the value is nil
+		s.LogWarning("hashChannel is not initialized")
+		return false, nil
+	}
+
 	if SanitizeCheck(key) {
-		status := bcrypt.CompareHashAndPassword([]byte(authkey_hash), []byte(key))
+		status := bcrypt.CompareHashAndPassword(authkey_hash.([]byte), []byte(key))
 		if status != nil {
 			s.LogWarning("invalid key")
-			//t.Logger(ctx).Debug("vivian: [warning]", "key invalid", http.StatusNotAcceptable)
 			return false, status
 		} else {
 			s.LogSuccess("verified key")
-			//t.Logger(ctx).Debug("vivian: [ok]", "key verified", status == nil, "status", http.StatusOK)
 			return true, status
 		}
 	}

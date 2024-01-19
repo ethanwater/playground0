@@ -66,7 +66,7 @@ func Authentication2FA(ctx context.Context, server *Server) http.Handler {
 }
 
 func GenerateAuthentication2FA(w http.ResponseWriter, ctx context.Context, server *Server) {
-	hashChan := make(chan string)
+	hashChan := make(chan []byte)
 	errorChan := make(chan error)
 
 	go func() {

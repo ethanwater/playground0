@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -23,6 +24,8 @@ type T interface {
 	VerifyAuthKey2FA(context.Context, string, string) (bool, error)
 }
 
+var hashChannel atomic.Pointer[string]
+
 func GenerateAuthKey2FA(ctx context.Context, s *utils.VivianLogger) (string, error) {
 	source := rand.New(rand.NewSource(time.Now().Unix()))
 	var authKey strings.Builder
@@ -32,17 +35,20 @@ func GenerateAuthKey2FA(ctx context.Context, s *utils.VivianLogger) (string, err
 		authKey.WriteString(string(charset[sample]))
 	}
 
-	hashChannel := make(chan string, 1)
+	var wg sync.WaitGroup
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		authKeyHash, err := HashKeyphrase(ctx, authKey.String())
 		if err != nil {
 			s.LogError("failure hashing the authentication key", err)
-			hashChannel <- ""
 			return
 		}
-		hashChannel <- authKeyHash
+		hashChannel.Store(&authKeyHash)
 	}()
-	hash := <-hashChannel
+	wg.Wait()
+
+	hash := *hashChannel.Load()
 
 	if hash == "" {
 		s.LogError("failure hashing the authentication key", errors.New("empty hash"))
@@ -54,11 +60,12 @@ func GenerateAuthKey2FA(ctx context.Context, s *utils.VivianLogger) (string, err
 	return hash, nil
 }
 
-func VerifyAuthKey2FA(ctx context.Context, authkey_hash, key string, s *utils.VivianLogger) (bool, error) {
+func VerifyAuthKey2FA(ctx context.Context, key string, s *utils.VivianLogger) (bool, error) {
 	var mu sync.Mutex
 	mu.Lock()
 	defer mu.Unlock()
 
+	authkey_hash := *hashChannel.Load()
 	if SanitizeCheck(key) {
 		status := bcrypt.CompareHashAndPassword([]byte(authkey_hash), []byte(key))
 		if status != nil {

@@ -57,9 +57,8 @@ func Authentication2FA(ctx context.Context, server *Server) http.Handler {
 		case "generate":
 			GenerateAuthentication2FA(w, ctx, server)
 		case "verify":
-			hash := strings.TrimSpace(q.Get("hash"))
 			key := strings.TrimSpace(q.Get("key"))
-			VerifyAuthentication2FA(w, ctx, server, hash, key)
+			VerifyAuthentication2FA(w, ctx, server, key)
 		default:
 			http.NotFound(w, r)
 		}
@@ -67,20 +66,20 @@ func Authentication2FA(ctx context.Context, server *Server) http.Handler {
 }
 
 func GenerateAuthentication2FA(w http.ResponseWriter, ctx context.Context, server *Server) {
-	hashChan := make(chan string)
+	keyChan := make(chan string)
 	errorChan := make(chan error)
 
 	go func() {
-		hash2FA, err := auth.GenerateAuthKey2FA(ctx, server.Logger)
+		key2FA, err := auth.GenerateAuthKey2FA(ctx, server.Logger)
 		if err != nil {
 			errorChan <- err
 			return
 		}
-		hashChan <- hash2FA
+		keyChan <- key2FA
 	}()
 
 	select {
-	case hash2FA := <-hashChan:
+	case hash2FA := <-keyChan:
 		bytes, err := json.Marshal(hash2FA)
 		if err != nil {
 			server.Logger.LogError("failure marshalling results", err)
@@ -98,13 +97,13 @@ func GenerateAuthentication2FA(w http.ResponseWriter, ctx context.Context, serve
 	}
 }
 
-//TODO allow a more streamlined hash input
-func VerifyAuthentication2FA(w http.ResponseWriter, ctx context.Context, server *Server, hash2FA, key2FA string) {
+// TODO allow a more streamlined hash input
+func VerifyAuthentication2FA(w http.ResponseWriter, ctx context.Context, server *Server, key2FA string) {
 	resultChan := make(chan bool)
 	errorChan := make(chan error)
 
 	go func() {
-		result, err := auth.VerifyAuthKey2FA(ctx, hash2FA, key2FA, server.Logger)
+		result, err := auth.VerifyAuthKey2FA(ctx, key2FA, server.Logger)
 		if err != nil {
 			errorChan <- err
 			return

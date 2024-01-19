@@ -36,29 +36,30 @@ jobs:
           exit 1
         fi
     
-    - name: Run Generate2FA Test
+    - name: Run 2FA Test
       run: |
-        go run build/main.go &  
-        sleep 5  
-        response=$(curl -s "http://127.0.0.1:8080/bella/2FA?action=generate")
-        if [[ "$response" != *"cat"* ]]; then
+        go run build/main.go &
+        sleep 5
+
+        generate_response=$(curl -s "http://127.0.0.1:8080/bella/2FA?action=generate" | tr -d '"')
+        echo "Generate Response: $generate_response"
+
+        if [[ "$generate_response" != *"cat"* ]]; then
           echo "Test passed: Generate2FA returned the expected input."
         else
           echo "Test failed: Generate2FA did not return the expected input."
           exit 1
         fi
 
-    - name: Run Verify2FA Test
-      run: |
-        go run build/main.go &  
-        sleep 5  
-        response=$(curl -s "http://127.0.0.1:8080/bella/2FA?action=verify&hash=%242a%2412%24EtZzq0tkfd%2FHkV8ulUKPNue4ju6vOpcHwm7nTxFMcYQLzDOtkfdTK&key=GBUU0")
-        if [[ "$response" == *"true"* ]]; then
-          echo "Test passed: Generate2FA returned the expected input."
+        verify_response=$(curl -s "http://127.0.0.1:8080/bella/2FA?action=verify&key=$generate_response")
+        echo "Verify Response: $verify_response"
+
+        if [[ "$verify_response" == *"true"* ]]; then
+          echo "Test passed: Verify2FA returned the expected input."
         else
-          echo "Test failed: Generate2FA did not return the expected input."
+          echo "Test failed: Verify2FA did not return the expected input."
           exit 1
         fi
-     
+
     - name: Stop the server
       run: pkill -f "build/main.go" || true  

@@ -41,7 +41,7 @@ jobs:
         go run build/main.go &
         sleep 5
 
-        generate_response=$(curl -s "http://127.0.0.1:8080/bella/2FA?action=generate")
+        generate_response=$(curl -s "http://127.0.0.1:8080/bella/2FA?action=generate" | tr -d '"')
         echo "Generate Response: $generate_response"
 
         if [[ "$generate_response" != *"cat"* ]]; then

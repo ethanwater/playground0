@@ -42,6 +42,8 @@ jobs:
         sleep 5
 
         generate_response=$(curl -s "http://127.0.0.1:8080/bella/2FA?action=generate")
+        echo "Generate Response: $generate_response"
+
         if [[ "$generate_response" != *"cat"* ]]; then
           echo "Test passed: Generate2FA returned the expected input."
         else
@@ -50,6 +52,8 @@ jobs:
         fi
 
         verify_response=$(curl -s "http://127.0.0.1:8080/bella/2FA?action=verify&key=$generate_response")
+        echo "Verify Response: $verify_response"
+
         if [[ "$verify_response" == *"true"* ]]; then
           echo "Test passed: Verify2FA returned the expected input."
         else

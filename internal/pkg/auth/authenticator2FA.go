@@ -31,7 +31,7 @@ type HashManager struct {
 
 var HashManagerAtomic HashManager
 
-func GenerateAuthKey2FA(ctx context.Context, s *utils.VivianLogger) ([]byte, error) {
+func GenerateAuthKey2FA(ctx context.Context, s *utils.VivianLogger) (string, error) {
 	source := rand.New(rand.NewSource(time.Now().Unix()))
 	var authKey strings.Builder
 
@@ -59,12 +59,12 @@ func GenerateAuthKey2FA(ctx context.Context, s *utils.VivianLogger) ([]byte, err
 
 	if hash == nil {
 		s.LogError("failure hashing the authentication key", errors.New("empty hash"))
-		return []byte{}, nil
+		return "", nil
 	}
 
 	s.LogSuccess(fmt.Sprintf("authentication key generated: %v", authKey.String()))
 	//t.sender.Get().SendVerificationCodeEmail(ctx, email, authKey.String())
-	return hash, nil
+	return authKey.String(), nil
 }
 
 func VerifyAuthKey2FA(ctx context.Context, key string, s *utils.VivianLogger) (bool, error) {
@@ -76,15 +76,15 @@ func VerifyAuthKey2FA(ctx context.Context, key string, s *utils.VivianLogger) (b
 		return false, nil
 	}
 
-	authkey_hash := HashManagerAtomic.atomicValue.Load()
-	if authkey_hash == nil {
+	hash := HashManagerAtomic.atomicValue.Load()
+	if hash == nil {
 		// Handle the case where the value is nil
 		s.LogWarning("hashChannel is not initialized")
 		return false, nil
 	}
 
 	if SanitizeCheck(key) {
-		status := bcrypt.CompareHashAndPassword(authkey_hash.([]byte), []byte(key))
+		status := bcrypt.CompareHashAndPassword(hash.([]byte), []byte(key))
 		if status != nil {
 			s.LogWarning("invalid key")
 			return false, status

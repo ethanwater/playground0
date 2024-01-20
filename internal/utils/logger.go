@@ -14,6 +14,7 @@ import (
 const (
 	VivianAppName       string = "vivian.app"
 	VivianLoggerSuccess string = "[vivian:success]"
+	VivianLoggerDebug 	string = "[vivian:debug]"
 	VivianLoggerWarning string = "[vivian:warn]"
 	VivianLoggerError   string = "[vivian:error]"
 	VivianLoggerFatal   string = "[vivian:fatal]"
@@ -51,9 +52,12 @@ func (s *VivianLogger) LogDeployment() {
 	fmt.Printf("╰───────────────────────────────────────────────────╯\n")
 }
 
-func (s *VivianLogger) LogFatal(msg string) {
-	s.logMessage(color.Ize(color.RedBackground, VivianLoggerFatal), msg)
-	os.Exit(1)
+func (s *VivianLogger) LogSuccess(msg string) {
+	s.logMessage(color.Ize(color.Green, VivianLoggerSuccess), msg)
+}
+
+func (s *VivianLogger) LogDebug(msg string) {
+	s.logMessage(color.Ize(color.Cyan, VivianLoggerDebug), msg)
 }
 
 func (s *VivianLogger) LogWarning(msg string) {
@@ -61,9 +65,10 @@ func (s *VivianLogger) LogWarning(msg string) {
 }
 
 func (s *VivianLogger) LogError(msg string, err error) {
-	s.logMessage(color.Ize(color.Red, VivianLoggerError), fmt.Sprintf("%s error: %s", msg, err))
+	s.logMessage(color.Ize(color.Red, VivianLoggerError), color.Ize(color.Yellow, fmt.Sprintf("%s error: %s", msg, err)))
 }
 
-func (s *VivianLogger) LogSuccess(msg string) {
-	s.logMessage(color.Ize(color.Green, VivianLoggerSuccess), msg)
+func (s *VivianLogger) LogFatal(msg string) {
+	s.logMessage(color.Ize(color.RedBackground, VivianLoggerFatal), msg)
+	os.Exit(1)
 }

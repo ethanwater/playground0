@@ -20,8 +20,9 @@ const (
 )
 
 type T interface {
-	GenerateAuthKey2FA(context.Context, string) (string, error)
-	VerifyAuthKey2FA(context.Context, string, string) (bool, error)
+	GenerateAuthKey2FA(context.Context, *utils.VivianLogger) (string, error)
+	VerifyAuthKey2FA(context.Context, string, *utils.VivianLogger) (bool, error)
+	ExpireAuthentication2FA(context.Context, *utils.VivianLogger) error
 }
 
 type HashManager struct {
@@ -79,7 +80,7 @@ func VerifyAuthKey2FA(ctx context.Context, key string, s *utils.VivianLogger) (b
 	hash := HashManagerAtomic.atomicValue.Load()
 	if hash == nil {
 		// Handle the case where the value is nil
-		s.LogWarning("hashChannel is not initialized")
+		s.LogWarning("2FA hash is not initialized")
 		return false, nil
 	}
 
@@ -95,4 +96,16 @@ func VerifyAuthKey2FA(ctx context.Context, key string, s *utils.VivianLogger) (b
 	}
 
 	return false, nil
+}
+
+func Expire2FA(ctx context.Context, s *utils.VivianLogger) error {
+	if HashManagerAtomic.atomicValue.Load() == nil {
+		err := errors.New("HashManagerAtomic is already nil") 
+		return err 
+	}
+	HashManagerAtomic.atomicValue = atomic.Value{} 
+	HashManagerAtomic.flag = 1
+
+	s.LogDebug(fmt.Sprintf("killing 2FA -> expired at: %v", time.Now().UTC()))
+	return nil
 }

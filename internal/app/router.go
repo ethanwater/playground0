@@ -59,6 +59,8 @@ func Authentication2FA(ctx context.Context, server *Server) http.Handler {
 		case "verify":
 			key := strings.TrimSpace(q.Get("key"))
 			VerifyAuthentication2FA(w, ctx, server, key)
+		case "expire":
+			ExpireAuthentication2FA(w, ctx, server)
 		default:
 			http.NotFound(w, r)
 		}
@@ -97,7 +99,6 @@ func GenerateAuthentication2FA(w http.ResponseWriter, ctx context.Context, serve
 	}
 }
 
-// TODO allow a more streamlined hash input
 func VerifyAuthentication2FA(w http.ResponseWriter, ctx context.Context, server *Server, key2FA string) {
 	resultChan := make(chan bool)
 	errorChan := make(chan error)
@@ -128,4 +129,13 @@ func VerifyAuthentication2FA(w http.ResponseWriter, ctx context.Context, server 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func ExpireAuthentication2FA(w http.ResponseWriter, ctx context.Context, server *Server) {
+	err := auth.Expire2FA(ctx, server.Logger); if err != nil {
+		server.Logger.LogError("failed to expire 2FA ->", err)
+		return
+	}
+	server.Logger.LogDebug("successfully expired 2FA token")
+	return
 }

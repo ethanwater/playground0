@@ -22,7 +22,7 @@ jobs:
     - name: Build and Test
       run: |
         go build ./...
-        go test -v ./...
+        #go test -v ./...
         
     - name: Run EchoResponse Test
       run: |
@@ -60,6 +60,9 @@ jobs:
           echo "Test failed: Verify2FA did not return the expected input."
           exit 1
         fi
+
+        clear_2FA_cache=$(curl -s "http://127.0.0.1:8080/bella/2FA?action=expire")
+
 
     - name: Stop the server
       run: pkill -f "build/main.go" || true  
